@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Maths 🚀</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(135deg,#eaf7ff,#fff7e6);color:#17324d;min-height:100vh}
+.app{max-width:720px;margin:auto;padding:22px}
+header{text-align:center}.logo{font-size:58px} h1{margin:4px 0;font-size:36px;color:#1667a8} .tag{margin:0 0 18px;color:#557086}
+.stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.pill{background:white;border-radius:999px;padding:9px 15px;box-shadow:0 4px 15px #0001;font-weight:700}
+.card{background:white;border-radius:26px;padding:24px;margin-top:18px;box-shadow:0 10px 30px #16415c18;text-align:center}
+h2{margin-top:0}.mission{font-size:18px;color:#607487}.question{font-size:48px;font-weight:800;margin:18px 0}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}.answers button{font-size:25px;font-weight:800;padding:17px;border:0;border-radius:18px;background:#eef6ff;color:#1768a8;box-shadow:inset 0 -3px #cfe5f8;cursor:pointer}.answers button:active{transform:scale(.98)}
+button{font-family:inherit}.correct{background:#dff8e8!important;color:#158347!important}.wrong{background:#ffe3e3!important;color:#b83232!important}
+.feedback{min-height:34px;font-size:20px;font-weight:800;margin:16px 0}.hidden{display:none}
+.primary{border:0;border-radius:16px;padding:13px 22px;background:#1768a8;color:white;font-size:17px;font-weight:800;cursor:pointer}
+.progress{height:12px;background:#e8eef3;border-radius:99px;overflow:hidden;margin:12px 0}.bar{height:100%;width:0;background:#38a169;border-radius:99px;transition:.3s}
+.start button{margin:5px}.level{font-weight:800;color:#ef8c25}
+@media(max-width:480px){.app{padding:14px}.question{font-size:40px}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="logo">🚀⭐</div>
+<h1>Mission Maths</h1>
+<p class="tag">Le défi des petits champions de 6 à 8 ans !</p>
+</header>
+
+<div class="stats">
+<div class="pill">⭐ Points : <span id="score">0</span></div>
+<div class="pill">❤️ Vies : <span id="lives">3</span></div>
+<div class="pill">🏆 Niveau : <span id="level">1</span></div>
+</div>
+
+<section id="start" class="card start">
+<h2>🎯 Choisis ta mission</h2>
+<p>Prêt(e) à devenir un champion des maths ?</p>
+<button class="primary" onclick="startGame('add')">➕ Additions</button>
+<button class="primary" onclick="startGame('sub')">➖ Soustractions</button>
+<button class="primary" onclick="startGame('mix')">🌟 Mission Mixte</button>
+</section>
+
+<section id="game" class="card hidden">
+<div class="mission" id="mission"></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="question" id="question"></div>
+<div class="answers" id="answers"></div>
+<div class="feedback" id="feedback"></div>
+<button class="primary hidden" id="next" onclick="nextQuestion()">➡️ Question suivante</button>
+</section>
+
+<section id="finish" class="card hidden">
+<div style="font-size:60px">🏆🎉</div>
+<h2>Mission accomplie !</h2>
+<p id="result"></p>
+<button class="primary" onclick="location.reload()">🔄 Rejouer</button>
+</section>
+</div>
+
+<script>
+let mode='mix',score=0,lives=3,level=1,current=0,total=10,answer=0,locked=false;
+
+const $=id=>document.getElementById(id);
+function startGame(m){
+ mode=m; score=0;lives=3;level=1;current=0;
+ $('score').textContent=score;$('lives').textContent=lives;$('level').textContent=level;
+ $('start').classList.add('hidden');$('finish').classList.add('hidden');$('game').classList.remove('hidden');
+ nextQuestion();
+}
+function rand(n){return Math.floor(Math.random()*n)}
+function makeQuestion(){
+ let max=Math.min(20+level*5,50),a=1+rand(max),b=1+rand(max),op=mode;
+ if(mode==='mix') op=rand(2)?'add':'sub';
+ if(op==='sub' && b>a)[a,b]=[b,a];
+ answer=op==='add'?a+b:a-b;
+ return `${a} ${op==='add'?'+':'−'} ${b} = ?`;
+}
+function nextQuestion(){
+ if(current>=total){finish();return}
+ locked=false;$('next').classList.add('hidden');$('feedback').textContent='';
+ $('question').textContent=makeQuestion();
+ $('mission').textContent=`Mission ${current+1} sur ${total} — ${mode==='add'?'Addition':mode==='sub'?'Soustraction':'Mission mixte'}`;
+ $('bar').style.width=(current/total*100)+'%';
+ let vals=new Set([answer]);
+ while(vals.size<4){
+   let delta=1+rand(7); vals.add(Math.max(0,answer+(rand(2)?delta:-delta)));
+ }
+ let arr=[...vals].sort(()=>Math.random()-.5);
+ $('answers').innerHTML=arr.map(v=>`<button onclick="check(${v},this)">${v}</button>`).join('');
+}
+function check(v,btn){
+ if(locked)return;locked=true;
+ if(v===answer){
+   score+=10*level; $('score').textContent=score;btn.classList.add('correct');
+   $('feedback').textContent='🎉 Bravo ! Excellente réponse !';
+ }else{
+   lives--; $('lives').textContent=lives;btn.classList.add('wrong');
+   [...$('answers').children].forEach(b=>{if(Number(b.textContent)===answer)b.classList.add('correct')});
+   $('feedback').textContent=`💡 Presque ! La bonne réponse était ${answer}.`;
+   if(lives<=0){setTimeout(finish,700);return}
+ }
+ current++;
+ if(current%3===0 && level<5){level++;$('level').textContent=level}
+ $('bar').style.width=(current/total*100)+'%';
+ $('next').classList.remove('hidden');
+}
+function finish(){
+ $('game').classList.add('hidden');$('finish').classList.remove('hidden');
+ $('result').innerHTML=`Tu as gagné <strong>${score} points</strong> !<br>🌟 Niveau atteint : <strong>${level}</strong><br>${score>=70?'Quel champion ! 🥳':'Continue tes missions, tu vas devenir encore plus fort(e) ! 💪'}`;
+}
+</script>
+</body>
+</html>
